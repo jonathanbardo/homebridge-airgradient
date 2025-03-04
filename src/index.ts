@@ -11,31 +11,18 @@ import {
 
 let hap: HAP;
 
+// JSON response from the custom JSON endpoint we are receiving data from
+// Example response:
+// {"pm02":4,"rco2":763,"atmp":23.30,"rhum":37}
 interface AirGradientData {
-  locationId: number;
-  pm01: number;
   pm02: number;
-  pm10: number;
-  pm003Count: number;
+  rco2: number;
   atmp: number;
   rhum: number;
-  rco2: number;
-  tvoc: number;
-  wifi: number;
-  timestamp: string;
-  ledMode: string;
-  ledCo2Threshold1: number;
-  ledCo2Threshold2: number;
-  ledCo2ThresholdEnd: number;
-  serialno: string | number;
-  model: string | number;
-  firmwareVersion: string | null;
-  tvocIndex: number;
-  noxIndex: number;
 }
 
 interface SensorConfig {
-  serialno: string;
+  metricsEndpoint: string;
   pollingInterval?: number;
 }
 
@@ -52,7 +39,7 @@ class AirGradientPlatform implements DynamicPlatformPlugin {
 
     if (config.sensors) {
       for (const sensorConfig of config.sensors as SensorConfig[]) {
-        this.log.info('Initializing sensor with serial number:', sensorConfig.serialno);
+        this.log.info('Initializing sensor with with metrics endpoint:', sensorConfig.metricsEndpoint);
         this.addAccessory(sensorConfig);
       }
     }
@@ -63,15 +50,15 @@ class AirGradientPlatform implements DynamicPlatformPlugin {
   }
 
   addAccessory(sensorConfig: SensorConfig) {
-    const uuid = hap.uuid.generate(sensorConfig.serialno);
+    const uuid = hap.uuid.generate(sensorConfig.metricsEndpoint);
     const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
     if (existingAccessory) {
       this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
       new AirGradientSensor(this, existingAccessory, sensorConfig);
     } else {
-      this.log.info('Adding new accessory for serial number:', sensorConfig.serialno);
-      const accessory = new this.api.platformAccessory(`AirGradient Sensor ${sensorConfig.serialno}`, uuid);
+      this.log.info('Adding new accessory for metrics endpoint:', sensorConfig.metricsEndpoint);
+      const accessory = new this.api.platformAccessory(`AirGradient Sensor ${sensorConfig.metricsEndpoint}`, uuid);
       new AirGradientSensor(this, accessory, sensorConfig);
       this.api.registerPlatformAccessories('homebridge-airgradient', 'AirGradientPlatform', [accessory]);
     }
@@ -84,11 +71,10 @@ class AirGradientPlatform implements DynamicPlatformPlugin {
 
 class AirGradientSensor {
   private readonly platform: AirGradientPlatform;
+  private readonly metricsEndpoint: string;
   private readonly accessory: PlatformAccessory;
   private readonly log: Logging;
-  private readonly serialno: string;
   private readonly pollingInterval: number;
-  private readonly apiUrl: string;
   private data: AirGradientData | null = null;
   private readonly service: Service;
   private readonly serviceTemp: Service;
@@ -99,15 +85,13 @@ class AirGradientSensor {
     this.platform = platform;
     this.accessory = accessory;
     this.log = platform.log;
-    this.serialno = sensorConfig.serialno;
+    this.metricsEndpoint = sensorConfig.metricsEndpoint;
     this.pollingInterval = sensorConfig.pollingInterval || 60000; // Default to 1 minute
 
-    // Construct the local API URL using the serialno
-    this.apiUrl = `http://airgradient_${this.serialno}.local/measures/current`;
 
     this.accessory.getService(hap.Service.AccessoryInformation)!
       .setCharacteristic(hap.Characteristic.Manufacturer, 'AirGradient')
-      .setCharacteristic(hap.Characteristic.SerialNumber, this.serialno);
+      .setCharacteristic(hap.Characteristic.SerialNumber, accessory.UUID);
 
     this.service = this.accessory.getService(hap.Service.AirQualitySensor) ||
       this.accessory.addService(hap.Service.AirQualitySensor);
@@ -129,15 +113,6 @@ class AirGradientSensor {
     this.service.getCharacteristic(hap.Characteristic.PM2_5Density)
       .on('get', this.handlePM2_5DensityGet.bind(this));
 
-    this.service.getCharacteristic(hap.Characteristic.PM10Density)
-      .on('get', this.handlePM10DensityGet.bind(this));
-
-    this.service.addCharacteristic(hap.Characteristic.VOCDensity)
-      .on('get', this.handleVOCDensityGet.bind(this));
-
-    this.service.addCharacteristic(hap.Characteristic.NitrogenDioxideDensity)
-      .on('get', this.handleNitrogenDioxideDensityGet.bind(this));
-
     this.serviceTemp.getCharacteristic(hap.Characteristic.CurrentTemperature)
       .on('get', this.handleCurrentTemperatureGet.bind(this));
 
@@ -153,7 +128,7 @@ class AirGradientSensor {
 
   private async fetchData() {
     try {
-      const response = await axios.get(this.apiUrl);
+      const response = await axios.get(this.metricsEndpoint);
       this.data = response.data;
       this.log.info('Data fetched successfully:', this.data);
 
@@ -182,11 +157,8 @@ class AirGradientSensor {
   private updateCharacteristics() {
     if (this.data) {
       const pm2_5 = this.data.pm02;
-      const pm10 = this.data.pm10;
-      const tvoc = this.data.tvocIndex;
-      const nox = this.data.noxIndex;
-      const temp = this.data.atmp;
       const co2 = this.data.rco2;
+      const temp = this.data.atmp;
       const rhum = this.data.rhum;
 
       // Validate data before updating characteristics
@@ -194,24 +166,6 @@ class AirGradientSensor {
         this.service.updateCharacteristic(hap.Characteristic.PM2_5Density, pm2_5);
       } else {
         this.log.warn('Invalid PM2.5 value:', pm2_5);
-      }
-
-      if (typeof pm10 === 'number' && isFinite(pm10)) {
-        this.service.updateCharacteristic(hap.Characteristic.PM10Density, pm10);
-      } else {
-        this.log.warn('Invalid PM10 value:', pm10);
-      }
-
-      if (typeof tvoc === 'number' && isFinite(tvoc)) {
-        this.service.updateCharacteristic(hap.Characteristic.VOCDensity, tvoc);
-      } else {
-        this.log.warn('Invalid TVOC value:', tvoc);
-      }
-
-      if (typeof nox === 'number' && isFinite(nox)) {
-        this.service.updateCharacteristic(hap.Characteristic.NitrogenDioxideDensity, nox);
-      } else {
-        this.log.warn('Invalid NOx value:', nox);
       }
 
       if (typeof temp === 'number' && isFinite(temp)) {
@@ -235,8 +189,7 @@ class AirGradientSensor {
 
       this.service.updateCharacteristic(hap.Characteristic.AirQuality, this.calculateAirQuality(pm2_5));
 
-      this.log.info(`Updated characteristics - PM2.5: ${pm2_5}, PM10: ${pm10}, TVOC: ${tvoc}, ` +
-        `NOx: ${nox}, TEMP: ${temp}, CO2: ${co2}, RHUM: ${rhum}`);
+      this.log.info(`Updated characteristics - PM2.5: ${pm2_5}, CO2: ${co2},TEMP: ${temp}, RHUM: ${rhum}`);
     }
   }
 
@@ -255,7 +208,7 @@ class AirGradientSensor {
   }
 
   private calculateCO2Detected(co2: number): number {
-    if (co2 <= 800) {
+    if (co2 <= 1000) {
       return hap.Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
     } else {
       return hap.Characteristic.CarbonDioxideDetected.CO2_LEVELS_ABNORMAL;
@@ -273,30 +226,6 @@ class AirGradientSensor {
   private handlePM2_5DensityGet(callback: (error: Error | null, value?: number) => void) {
     if (this.data) {
       callback(null, this.data.pm02);
-    } else {
-      callback(new Error('No data available'));
-    }
-  }
-
-  private handlePM10DensityGet(callback: (error: Error | null, value?: number) => void) {
-    if (this.data) {
-      callback(null, this.data.pm10);
-    } else {
-      callback(new Error('No data available'));
-    }
-  }
-
-  private handleVOCDensityGet(callback: (error: Error | null, value?: number) => void) {
-    if (this.data) {
-      callback(null, this.data.tvocIndex);
-    } else {
-      callback(new Error('No data available'));
-    }
-  }
-
-  private handleNitrogenDioxideDensityGet(callback: (error: Error | null, value?: number) => void) {
-    if (this.data) {
-      callback(null, this.data.noxIndex);
     } else {
       callback(new Error('No data available'));
     }

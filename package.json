@@ -2,22 +2,23 @@
   "private": false,
   "displayName": "AirGradient",
   "name": "homebridge-airgradient",
-  "version": "2.0.0",
-  "description": "Fetches air quality information from AirGradient devices.",
+  "version": "0.0.1",
+  "description": "Fetches air quality information from AirGradient with custom firmware from https://github.com/jonathanbardo/AirGradient",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Smith8154/homebridge-airgradient.git"
+    "url": "git+https://github.com/jonathanbardo/homebridge-airgradient.git"
   },
   "bugs": {
-    "url": "https://github.com/Smith8154/homebridge-airgradient/issues"
+    "url": "https://github.com/jonathanbardo/homebridge-airgradient/issues"
   },
   "dependencies": {
-    "axios": "^0.21.1"
+    "homebridge-lib": "^7.1.4",
+    "axios": "^1.8.1"
   },
   "engines": {
-    "node": "^18.17.0 || ^20.9.0",
-    "homebridge": "^1.6.0"
+    "node": "^18.20.4 || ^20.18.0 || ^22.10.0",
+    "homebridge": "^1.8.0 || ^2.0.0-beta.0"
   },
   "main": "dist/index.js",
   "scripts": {
@@ -35,15 +36,13 @@
     "tvoc"
   ],
   "devDependencies": {
-    "@types/node": "^20.12.7",
-    "@typescript-eslint/eslint-plugin": "^7.7.0",
-    "@typescript-eslint/parser": "^7.7.0",
-    "axios": "^0.21.4",
-    "eslint": "^8.57.0",
-    "homebridge": "^1.8.0",
-    "nodemon": "^3.1.0",
-    "rimraf": "^5.0.5",
+    "@types/node": "^22.13.5",
+    "axios": "^1.8.1",
+    "eslint": "^9.21.0",
+    "homebridge": "^2.0.0-beta.0",
+    "nodemon": "^3.1.9",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.7.3"
   }
 }

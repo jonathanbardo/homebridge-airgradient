@@ -11,15 +11,15 @@
         "items": {
           "type": "object",
           "properties": {
-            "serialno": {
-              "title": "Serial Number",
+            "metricsEndpoint": {
+              "title": "Metrics Endpoint",
               "type": "string",
               "required": true
             },
             "pollingInterval": {
               "title": "Polling Interval (ms)",
               "type": "number",
-              "default": 60000,
+              "default": 30000,
               "minimum": 1000
             }
           }
@@ -37,12 +37,12 @@
           "add": "Add Sensor",
           "items": [
             {
-              "key": "sensors[].serialno",
-              "placeholder": "Enter your Serial Number"
+              "key": "sensors[].metricsEndpoint",
+              "placeholder": "Enter your metrics endpoint"
             },
             {
               "key": "sensors[].pollingInterval",
-              "placeholder": 60000
+              "placeholder": 30000
             }
           ]
         }
