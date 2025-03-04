@@ -13,6 +13,7 @@ import {
 } from 'homebridge';
 
 export interface SensorConfig {
+  name: string;
   metricsEndpoint: string;
   pollingInterval?: number;
 }
@@ -32,7 +33,7 @@ export class AirGradientPlatform implements DynamicPlatformPlugin {
 
     if (config.sensors) {
       for (const sensorConfig of config.sensors as SensorConfig[]) {
-        this.log.info('Initializing sensor with with metrics endpoint:', sensorConfig.metricsEndpoint);
+        this.log.info(`Initializing sensor (${sensorConfig.name}) with with metrics endpoint: ${sensorConfig.metricsEndpoint}`);
         this.addAccessory(sensorConfig);
       }
     }
@@ -51,7 +52,7 @@ export class AirGradientPlatform implements DynamicPlatformPlugin {
       new AirGradientSensor(this, existingAccessory, sensorConfig);
     } else {
       this.log.info('Adding new accessory for metrics endpoint:', sensorConfig.metricsEndpoint);
-      const accessory = new this.api.platformAccessory(`AirGradient Sensor ${sensorConfig.metricsEndpoint}`, uuid);
+      const accessory = new this.api.platformAccessory(`AirGradient Sensor ${sensorConfig.name}`, uuid);
       new AirGradientSensor(this, accessory, sensorConfig);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }

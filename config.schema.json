@@ -11,6 +11,11 @@
         "items": {
           "type": "object",
           "properties": {
+            "name": {
+              "title": "Name of the sensor",
+              "type": "string",
+              "required": true
+            },
             "metricsEndpoint": {
               "title": "Metrics Endpoint",
               "type": "string",
@@ -36,6 +41,10 @@
           "type": "array",
           "add": "Add Sensor",
           "items": [
+            {
+              "key": "sensors[].name",
+              "placeholder": "Enter the name of the sensor"
+            },
             {
               "key": "sensors[].metricsEndpoint",
               "placeholder": "Enter your metrics endpoint"

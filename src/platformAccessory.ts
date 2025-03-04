@@ -19,6 +19,7 @@ interface AirGradientData {
 
 export class AirGradientSensor {
     private readonly platform: AirGradientPlatform;
+    private readonly name: string;
     private readonly metricsEndpoint: string;
     private readonly accessory: PlatformAccessory;
     private readonly log: Logging;
@@ -33,13 +34,14 @@ export class AirGradientSensor {
         this.platform = platform;
         this.accessory = accessory;
         this.log = platform.log;
+        this.name = sensorConfig.name;
         this.metricsEndpoint = sensorConfig.metricsEndpoint;
         this.pollingInterval = sensorConfig.pollingInterval || 60000; // Default to 1 minute
 
 
         this.accessory.getService(this.platform.Service.AccessoryInformation)!
-        .setCharacteristic(this.platform.Characteristic.Manufacturer, 'AirGradient')
-        .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.UUID);
+            .setCharacteristic(this.platform.Characteristic.Manufacturer, 'AirGradient')
+            .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.UUID);
 
         this.service = this.accessory.getService(this.platform.Service.AirQualitySensor) ||
         this.accessory.addService(this.platform.Service.AirQualitySensor);
@@ -76,15 +78,15 @@ export class AirGradientSensor {
 
     private async fetchData() {
         try {
-        const response = await axios.get(this.metricsEndpoint);
-        this.data = response.data;
-        this.log.info('Data fetched successfully:', this.data);
+            const response = await axios.get(this.metricsEndpoint);
+            this.data = response.data;
+            this.log.info('Data fetched successfully:', this.data);
 
-        // Log the full response for debugging
-        this.log.debug('API response:', this.data);
+            // Log the full response for debugging
+            this.log.debug('API response:', this.data);
         } catch (error) {
-        this.log.error('Error fetching data from AirGradient API:', error);
-        throw error;
+            this.log.error('Error fetching data from AirGradient API:', error);
+            throw error;
         }
     }
 
