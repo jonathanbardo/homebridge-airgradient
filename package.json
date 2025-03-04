@@ -1,7 +1,7 @@
 {
   "private": false,
   "displayName": "AirGradient",
-  "name": "homebridge-airgradient",
+  "name": "@jonathanbardo/homebridge-airgradient",
   "version": "0.0.1",
   "description": "Fetches air quality information from AirGradient with custom firmware from https://github.com/jonathanbardo/AirGradient",
   "license": "Apache-2.0",
