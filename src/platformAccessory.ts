@@ -161,7 +161,7 @@ export class AirGradientSensor {
     }
 
     private calculateCO2Detected(co2: number): number {
-        if (co2 <= 1000) {
+        if (co2 <= 1200) {
             return this.platform.Characteristic.CarbonDioxideDetected.CO2_LEVELS_NORMAL;
         }
 
